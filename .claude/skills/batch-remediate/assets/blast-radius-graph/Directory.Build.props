@@ -1,0 +1,7 @@
+<Project>
+  <!-- Build output goes to the temp folder, never into the skill folder (nothing under the skill is
+       written at runtime). Also keeps the fixture's design-time build out of the tree. -->
+  <PropertyGroup>
+    <ArtifactsPath>$([System.IO.Path]::GetTempPath())batch-remediate-blast-radius-graph</ArtifactsPath>
+  </PropertyGroup>
+</Project>
