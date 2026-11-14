@@ -1,10 +1,11 @@
+<!-- Northline Retail demo tenant. Credentials come from the local environment, never this file. -->
 # batch-remediate engagement config — ai-persona-demo (Northline Retail) · lean
 
 Read by batch-remediate 4.0.0 from `{REPO_ROOT}/.claude/batch-remediate.config.md`. Keys not set here
 keep the defaults in `.claude/skills/batch-remediate/SKILL.md` §0. No secrets in this file.
 
-`TICKET_URL` is left as `{fill}` on purpose: the first run stops and names it until the Jira site
-exists. Replace it with your site URL (e.g. `https://northlineretail.atlassian.net`).
+`JIRA_PROJECT` is the demo tenant name. The live Northline board uses Jira project key `KAN`,
+so `TICKET_PROJECT` supplies that canonical key for REST searches. The low-stock story is `KAN-4`.
 
 ```
 # ---- Core ----------------------------------------------------------------------------------------
@@ -30,8 +31,12 @@ BLAST_GRAPH       = off
 BLAST_LOOP_SCAN   = .claude/skills/batch-remediate/assets/blast-radius.sh
 
 # ---- Ticket adapter: Jira Cloud ------------------------------------------------------------------
-TICKET_URL        = {fill: https://<your-site>.atlassian.net}
-TICKET_PROJECT    = NL
+JIRA_SITE         = https://aipersona.atlassian.net
+JIRA_PROJECT      = NORTHLINE
+JIRA_EMAIL        = mitchell@aipersona.dev
+JIRA_API_TOKEN    = ${JIRA_API_TOKEN}
+TICKET_URL        = https://aipersona.atlassian.net
+TICKET_PROJECT    = KAN
 AC_SOURCE         = description-heading
 AC_FIELD          =
 AC_HEADING        = Acceptance Criteria
@@ -76,5 +81,5 @@ FLAG_PREFIX       = -
 KNOWN_FACTS       = -
 ENGAGEMENT_RULES  = Unit tests use the EF Core InMemory provider and must not need the SQL Server container.
                     The skill never runs docker compose.
-SECRET_ENV        = JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN (environment or ~/.batch-remediate.env), GH_TOKEN or gh auth login
+SECRET_ENV        = JIRA_API_TOKEN (required environment variable); JIRA_SITE/JIRA_BASE_URL and JIRA_EMAIL may override config; GH_TOKEN or gh auth login
 ```

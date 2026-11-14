@@ -10,6 +10,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Test Jira intake adapter (offline)
+        run: python3 -m unittest discover -s tests/jira_adapter -v
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'

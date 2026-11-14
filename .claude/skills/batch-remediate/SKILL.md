@@ -215,14 +215,24 @@ traps that cost earlier runs: `az.cmd` splitting URLs at `&`, empty bodies from 
 
 ### 2.3 Implementation — `jira` (Jira Cloud)
 
-Every call goes through `assets/jira.sh METHOD PATH [BODY_FILE]` (curl; credentials from
-`JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` in the environment or `~/.batch-remediate.env`;
-never in a command, file, comment or log). Bodies are written to `{BATCH_ROOT}/tmp/` with the Write
-tool, never inline. REST v2 for issues and comments (wiki markup as plain text, no ADF).
+For this demo's intake, first run
+`python3 .claude/skills/batch-remediate/assets/jira_ticket.py [ISSUE-KEY]` from the repo root.
+An omitted key uses `JIRA_ISSUE_KEY`, then the oldest Story in `TICKET_PROJECT` (or `JIRA_PROJECT`).
+Use its live v3 `summary`, ADF-rendered `description`, and `acceptance_criteria` as requirements;
+do not substitute BACKLOG.md when Jira succeeds, even if AC are missing. If `source = backlog`,
+explicitly report offline fallback, use it only for local work, and never write back to Jira or
+claim the requested live issue was read. The adapter reads the config without sourcing it;
+`JIRA_API_TOKEN` must come from the environment. Config has only its `${JIRA_API_TOKEN}` placeholder.
+
+Other calls go through `bash assets/jira.sh METHOD PATH [BODY_FILE]` (Python 3 standard library;
+site/email from config or environment, token from environment only;
+never put credentials in a command, file, comment or log). Bodies are written to `{BATCH_ROOT}/tmp/` with the Write
+tool, never inline. Intake uses REST v3 with ADF; supplementary comment/write calls use
+REST v2 (wiki markup as plain text, no ADF).
 
 | Call | Implementation |
 |---|---|
-| `fetch_ticket` | `GET /rest/api/2/issue/{key}?fields=summary,description,status,issuetype,assignee,reporter,labels,updated,issuelinks[,{AC_FIELD}]&expand=changelog`; comments `GET /rest/api/2/issue/{key}/comment?startAt={n}&maxResults=100&orderBy=created` until all read. `ac` = `AC_FIELD`, or the description under `{AC_HEADING}` (`h2.`/`*bold*`/plain line) to the next heading. Owner = assignee, else reporter. `*_changed_at` from the changelog |
+| `fetch_ticket` | Run `jira_ticket.py` for v3 summary/description/AC intake as above. When `source = jira`, supplement via `GET /rest/api/3/issue/{key}?fields=status,issuetype,assignee,reporter,labels,updated,issuelinks&expand=changelog`; comments `GET /rest/api/2/issue/{key}/comment?startAt={n}&maxResults=100&orderBy=created` until all read. Owner = assignee, else reporter. `*_changed_at` from the changelog |
 | `post_comment` | `POST /rest/api/2/issue/{key}/comment` with `{"body": "<wiki markup>"}` |
 | `edit_comment` | `PUT /rest/api/2/issue/{key}/comment/{commentId}` — own comments only |
 | `list_queue` | `POST /rest/api/3/search/jql` with `project = {TICKET_PROJECT} AND labels = "{QUEUE}" AND statusCategory != Done ORDER BY updated ASC`, following `nextPageToken` |
@@ -233,7 +243,8 @@ tool, never inline. REST v2 for issues and comments (wiki markup as plain text, 
 
 Markup: `*bold*`, `# numbered`, `* bullet`, `{code:bash}…{code}`, `[text|url]`. In the marker line
 escape each `|` as `\|` (Jira reads `[a|b]` as a link); parse markers with either separator.
-`401`/`403` stop the run with nothing posted. The skill never transitions, reassigns, or edits a
+`401`/`403` on raw REST calls stop the run with nothing posted; intake alone can return the explicitly
+marked offline backlog fallback. The skill never transitions, reassigns, or edits a
 Jira issue's summary, description or AC.
 
 ### 2.4 Session check
