@@ -9,3 +9,6 @@ public record CreateOrderRequest(
 
 /// <summary>One requested line on a new order.</summary>
 public record CreateOrderLine(int ProductId, int Quantity);
+
+/// <summary>One item in the low-stock response (KAN-4 AC-2).</summary>
+public record LowStockProduct(int Id, string Name, int Quantity, decimal UnitPrice);

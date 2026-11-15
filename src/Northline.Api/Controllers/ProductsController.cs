@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Northline.Api.Data;
 using Northline.Api.Models;
+using Northline.Api.Services;
 
 namespace Northline.Api.Controllers;
 
@@ -29,6 +31,20 @@ public class ProductsController : ControllerBase
         }
 
         return Ok(await query.OrderBy(p => p.Id).ToListAsync(ct));
+    }
+
+    /// <summary>
+    /// Lists active products whose stock is below <paramref name="threshold"/> (default 10).
+    /// Requires an authenticated caller; returns 200 with an empty array when none qualify (KAN-4).
+    /// </summary>
+    [Authorize]
+    [HttpGet("low-stock")]
+    public async Task<IActionResult> GetLowStock(
+        [FromServices] ILowStockService lowStock,
+        [FromQuery] int threshold = LowStockService.DefaultThreshold,
+        CancellationToken ct = default)
+    {
+        return Ok(await lowStock.GetLowStockAsync(threshold, ct));
     }
 
     /// <summary>Gets one product by id.</summary>
